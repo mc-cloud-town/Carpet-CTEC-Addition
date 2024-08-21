@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "carpet-ctec-addition",
+  "name": "Carpet-CTEC-Addition",
+  "version": "${version}",
+  "description": "",
+  "authors": [
+    "CTEC"
+  ],
+  "contact": {
+    "homepage": "${mod_homepage}",
+    "issues": "${mod_sources}/issues",
+    "sources": "${mod_sources}"
+  },
+  "license": "MIT",
+  "icon": "assets/carpet-ctec-addition/icon.png",
+  "environment": "*",
+  "entrypoints": {
+  },
+  "mixins": [
+    "carpet-ctec-addition.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.11.0",
+    "minecraft": "${minecraft_dependency}",
+    "carpet": "${carpet_dependency}"
+  }
+}

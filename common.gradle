@@ -1,0 +1,169 @@
+apply plugin: 'maven-publish'
+apply plugin: 'com.github.hierynomus.license'
+apply plugin: 'fabric-loom'
+apply plugin: 'com.replaymod.preprocess'
+
+int mcVersion = project.mcVersion
+version("v${project.mod_version}")
+
+preprocess {
+    tabIndentation = true
+}
+
+repositories {
+    maven {
+        url 'https://masa.dy.fi/maven'
+    }
+    maven {
+        url 'https://maven.fallenbreath.me/releases'
+    }
+    maven {
+        url 'https://jitpack.io'
+    }
+    maven {
+        url 'https://www.cursemaven.com'
+    }
+}
+
+base.archivesName = project.archives_base_name + '-mc' + project.minecraft_version
+
+dependencies {
+    // loom
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // mod dependencies
+    modImplementation "carpet:fabric-carpet:${project.carpet_core_version}"
+}
+
+def MIXIN_CONFIG_PATHS = ['holdeasyplace.mixins.json']
+String LANG_DIR = 'assets/holdeasyplace/lang'
+JavaVersion JAVA_COMPATIBILITY
+if (mcVersion >= 12005) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_21
+} else if (mcVersion >= 11800) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_17
+} else if (mcVersion >= 11700) {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_16
+} else {
+    JAVA_COMPATIBILITY = JavaVersion.VERSION_1_8
+}
+JavaVersion MIXIN_COMPATIBILITY_LEVEL = JAVA_COMPATIBILITY
+
+loom {
+    runConfigs.configureEach {
+        runDir '../../run'
+        vmArgs '-Dmixin.debug.export=true'
+    }
+    runConfigs.client {
+        // to make sure it generates all "Minecraft Client (:subproject_name)" applications
+        ideConfigGenerated = true
+    }
+    runs {
+        clientMixinAudit {
+            client()
+            ideConfigGenerated false
+        }
+    }
+}
+
+remapJar {
+    remapperIsolation.set(true)
+}
+
+// See https://youtrack.jetbrains.com/issue/IDEA-296490
+// if IDEA complains about "Cannot resolve resource filtering of MatchingCopyAction" and you want to know why
+processResources {
+    inputs.property "id", project.mod_id
+    inputs.property "name", project.mod_name
+    inputs.property "version", project.version
+    inputs.property "minecraft_dependency", project.minecraft_dependency
+    inputs.property "carpet_dependency", project.carpet_dependency
+    inputs.property "mod_homepage", project.mod_homepage
+    inputs.property "mod_sources", project.mod_sources
+
+    filesMatching("fabric.mod.json") {
+        def valueMap = [
+                "id"                  : project.mod_id,
+                "name"                : project.mod_name,
+                "version"             : project.version,
+                "minecraft_dependency": project.minecraft_dependency,
+                "carpet_dependency"  : project.carpet_dependency,
+                "mod_homepage"        : project.mod_homepage,
+                "mod_sources"         : project.mod_sources
+        ]
+        expand valueMap
+    }
+
+    MIXIN_CONFIG_PATHS.each { mixinConfigPath ->
+        filesMatching(mixinConfigPath) {
+            filter { s -> s.replace('{{COMPATIBILITY_LEVEL}}', "JAVA_${MIXIN_COMPATIBILITY_LEVEL.ordinal() + 1}") }
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+    if (JAVA_COMPATIBILITY <= JavaVersion.VERSION_1_8) {
+        options.compilerArgs << '-Xlint:-options'
+    }
+}
+
+java {
+    sourceCompatibility = JAVA_COMPATIBILITY
+    targetCompatibility = JAVA_COMPATIBILITY
+    withSourcesJar()
+}
+
+//jar {
+//    from("../../LICENSE") {
+//        rename { "${it}_${project.archives_base_name}" }
+//    }
+//}
+
+// https://github.com/hierynomus/license-gradle-plugin
+// 請選擇好授權方式後更改author以及建立HEADER.txt
+//license {
+//    // use "gradle licenseFormat" to apply license headers
+//    header = rootProject.file('HEADER.txt')
+//    include '**/*.java'
+//    skipExistingHeaders = true
+//
+//    headerDefinitions {
+//        SLASHSTAR_STYLE_NEWLINE {
+//            firstLine = "/*"
+//            beforeEachLine = " * "
+//            endLine = " */" + System.lineSeparator()
+//            afterEachLine = ""
+//            skipLinePattern = null
+//            firstLineDetectionPattern = "(\\s|\\t)*/\\*.*\$"
+//            lastLineDetectionPattern = ".*\\*/(\\s|\\t)*\$"
+//            allowBlankLines = false
+//            isMultiline = true
+//            padLines = false
+//        }
+//    }
+//    mapping {
+//        java = 'SLASHSTAR_STYLE_NEWLINE'
+//    }
+//    ext {
+//        name = project.mod_name
+//        author = 'CTEC'
+//        year = Calendar.getInstance().get(Calendar.YEAR).toString()
+//    }
+//}
+
+classes.dependsOn licenseFormatMain
+testClasses.dependsOn licenseFormatTest
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId base.archivesName.get()
+            from components.java
+            version = project.mod_version
+        }
+    }
+}

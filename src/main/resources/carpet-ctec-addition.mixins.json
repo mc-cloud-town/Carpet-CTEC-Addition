@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "package": "org.ctec.CarpetCTECAddition.mixins",
+  "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+  ]
+}
