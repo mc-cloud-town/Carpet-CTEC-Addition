@@ -59,9 +59,17 @@ loom {
         // to make sure it generates all "Minecraft Client (:subproject_name)" applications
         ideConfigGenerated = true
     }
+    runConfigs.server {
+        // to make sure it generates all "Minecraft Server (:subproject_name)" applications
+        ideConfigGenerated = true
+    }
     runs {
         clientMixinAudit {
             client()
+            ideConfigGenerated false
+        }
+        serverMixinAudit {
+            server()
             ideConfigGenerated false
         }
     }

@@ -16,6 +16,9 @@
   "icon": "assets/carpet-ctec-addition/icon.png",
   "environment": "*",
   "entrypoints": {
+    "main": [
+      "org.ctec.CarpetCTECAddition.CarpetCTECAddition"
+    ]
   },
   "mixins": [
     "carpet-ctec-addition.mixins.json"
