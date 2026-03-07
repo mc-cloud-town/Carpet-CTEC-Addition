@@ -20,52 +20,33 @@
 
 package org.ctec.CarpetCTECAddition.mixins;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.NoteBlock;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.state.property.Property;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.ctec.CarpetCTECAddition.CarpetCTECAdditionSettings;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(NoteBlock.class)
-public class NoteBlockMixin {
 
-//    @Redirect(
-//            method = "onUse",
-//            at = @At(
-//                    value = "INVOKE",
-//                    target = "Lnet/minecraft/block/BlockState;cycle(Lnet/minecraft/state/property/Property;)Ljava/lang/Object;"
-//            )
-//    )
-//    private Object modifyCycle(BlockState state, Property<?> property) {
-//        // your custom logic here
-//        if ("true".equals(CarpetCTECAdditionSettings.staticNoteBlock)) {
-//            return state; // Return the original state without cycling
-//        }
-//        return state.cycle(property); // Proceed with the normal cycling behavior
-//    }
-    @Redirect(
-            method = "onUse",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"
-            )
-    )
+@Mixin(NoteBlock.class)
+public class NoteBlockStaticToneMixin {
+//#if MC>=11500
+    @Redirect(method = "onUse", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"))
+//#else
+//$$    @Redirect(method = "activate", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;setBlockState(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;I)Z"))
+//#endif
+    @Unique
     private boolean redirectSetBlockState(World instance, BlockPos pos, BlockState state, int flags) {
         BlockState state2 = instance.getBlockState(pos);
-
-        boolean ret =  instance.setBlockState(pos, state, flags);
-        if ("true".equals(CarpetCTECAdditionSettings.staticNoteBlock) && state2.getBlock() instanceof NoteBlock) {
+        boolean ret = instance.setBlockState(pos, state, flags);
+        if (CarpetCTECAdditionSettings.staticNoteBlock && state2.getBlock() instanceof NoteBlock) {
             WorldChunk chunk = instance.getWorldChunk(pos);
             chunk.setBlockState(pos, state2, false);
         }
         return ret;
-
     }
 }
